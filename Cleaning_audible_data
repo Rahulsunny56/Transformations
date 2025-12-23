@@ -1,0 +1,75 @@
+audible = pd.read_csv('data/audible_raw.csv')
+
+# View 
+audible.head(5)
+
+#Replace
+audible['author'] = audible['author'].str.replace(r'Writtenby:|Narratedby:', '', regex=True).str.strip()
+audible['narrator']= audible['narrator'].str.replace(r'Writtenby:|Narratedby:', '', regex=True).str.strip()
+
+# Check the results
+audible
+audible['stars'].sample(n=10)
+audible[audible.stars != 'Not rated yet'].stars.sample(n=10)
+audible['stars'].replace('Not rated yet',np.nan,inplace=True)
+
+# Extract
+audible['rating_stars'] = audible['stars'].str.extract('^([\d.]+)').astype('float')
+audible['n_rating'] = audible['stars'].str.replace(',','').str.extract('(\d+) rating').astype('float')
+audible[['rating_stars','n_rating']]
+audible.drop(columns = ['stars'],axis =1, inplace = True) 
+
+#Transform
+audible['price'] = audible.price.str.replace(',','')
+audible['price'] = audible.price.str.replace('Free','0')
+audible['price'] = audible.price.astype('float')
+audible['rating_stars'] = audible['rating_stars'].astype('category')
+audible['releasedate'] = pd.to_datetime(audible.releasedate)
+audible.info()
+
+# Converting 
+audible.time[audible['time'].str.contains('mins')].sample(n=10)
+audible['time'] = audible.time.str.replace('hrs','hr')
+audible['time'] = audible.time.str.replace('mins','min')
+audible['time'] = audible.time.str.replace('Less than 1 minute','1 min')
+hrs = audible['time'].str.extract('(\d+) hr').fillna(0).astype(int)
+mins = audible['time'].str.extract('(\d+) min').fillna(0).astype(int)
+audible['time_min'] = hrs * 60 + mins
+audible
+audible.drop(columns=['time'],axis = 1,inplace = True)
+
+# Ploting
+audible.hist(figsize=(10,10),bins = 1000)
+plt.show()
+
+# Looking for numeric columns 
+audible.describe(include = [np.number])
+audible.describe(exclude=[np.number])
+audible['price'] = audible.price * 0.012
+audible.price.describe()
+
+#Update capitalization 
+audible['language'] = audible['language'].str.capitalize()
+audible.language.unique()
+
+# Cheking for duplicates 
+audible.duplicated().sum()
+subset_cols = ['name','author','narrator','time_min','price']
+audible.duplicated(subset = subset_cols).sum()
+audible[audible.duplicated(subset = subset_cols, keep = False)].sort_values(by='name')
+audible.drop_duplicates(subset = subset_cols, keep = 'last', inplace = True)
+audible.duplicated(subset = subset_cols).sum()
+0
+
+# Dealing with missind data 
+audible.isna().sum()
+
+#Saving clean dataset
+audible.to_csv('data/audible_clean.csv', index = False)
+
+
+
+
+
+
+
